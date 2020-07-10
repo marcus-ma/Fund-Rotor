@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Title</title>
+</head>
+<body>
+<table>
+    <tr><td valign="top">
+            <form>
+                <button id="open">Open</button>
+                <button id="close">Close</button>
+            </form>
+            <div id="output"></div>
+        </td>
+    </tr>
+</table>
+<script src="http://libs.baidu.com/jquery/2.0.0/jquery.min.js"></script>
+<script>
+
+    //此处填写要实时爬取的基金代码和该基金的持有份额
+    var config=[
+        {"code":"519674","money":"10"},
+    ]
+    window.addEventListener("load", function(evt) {
+        var ws;
+        document.getElementById("open").onclick = function(evt) {
+            if (ws) {return false;}
+            ws = new WebSocket("ws://localhost:8888/ws");
+            ws.onopen = function(evt) {ws.send(JSON.stringify({"data":config}));}
+            ws.onclose = function(evt) {ws = null;}
+            ws.onerror = function(evt) {}
+            ws.onmessage = function(evt) {
+                $('#output').empty();
+                let data = JSON.parse(evt.data),
+                    res = []
+
+                console.log(data);
+
+                data.map(function (item) {
+                    $('#output').append('<h3>'+JSON.stringify({"name":item.name,"range":item.range,"momney":item.money})+'</h3>');
+                    res.push(item.money)
+                })
+
+                let sum_money = (eval(res.join("+"))).toFixed(2);
+                $('#output').append('<h3 style="color: red">总收益：'+sum_money+'</h3>');
+
+            }
+            return false;
+        };
+
+
+        document.getElementById("close").onclick = function(evt) {
+            if (!ws) {return false;}
+            ws.close();
+            return false;
+        };
+    });
+</script>
+</body>
+</html>
