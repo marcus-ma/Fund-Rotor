@@ -11,3 +11,6 @@ A tool that use Websock's fund to crawl and calculate estimated returns for the 
         {"code":"519674","money":"10"},
     ]
 ```
+
+### Start The Server
+windows平台的可以直接打开项目中的可执行文件`Fund-Rotor.exe`,然后在打开前端页面`front-end.html`,点击页面上的open按钮，就可以实时监听获取基金的收益信息了(服务端代码设置了10秒推送一次)
