@@ -177,6 +177,15 @@ func wsHandler(w http.ResponseWriter, r *http.Request) {
 		data   []byte
 		conn   *Connection
 	)
+	t := time.Now()
+	//早上开市
+	lunchStart := time.Date(t.Year(), t.Month(), t.Day(), 9, 30, 0, 0, t.Location()).Unix()
+	//中午休市
+	lunchClose := time.Date(t.Year(), t.Month(), t.Day(), 11, 30, 0, 0, t.Location()).Unix()
+	//下午开市
+	lunchOpen := time.Date(t.Year(), t.Month(), t.Day(), 13, 00, 0, 0, t.Location()).Unix()
+	//下午收市
+	lunchEnd := time.Date(t.Year(), t.Month(), t.Day(), 15, 00, 0, 0, t.Location()).Unix()
 
 	if wsConn, err = upgrade.Upgrade(w, r, nil); err != nil {
 		return
@@ -196,9 +205,14 @@ func wsHandler(w http.ResponseWriter, r *http.Request) {
 				err error
 			)
 			for {
-				if err = conn.WriteMessage(fund(string(data))); err != nil {
-					return
+				
+				now:=time.Now().Unix()
+				if  (lunchStart < now && now < lunchClose) || (lunchOpen < now && now < lunchEnd) {
+					if err = conn.WriteMessage(fund(string(data))); err != nil {
+						return
+					}
 				}
+
 				time.Sleep(10 * time.Second)
 			}
 
