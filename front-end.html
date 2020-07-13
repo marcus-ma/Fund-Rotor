@@ -79,7 +79,10 @@
                 let sum_money = (eval(res.join("+"))).toFixed(2);
                 $('#output').append('<h3 style="color: red">总收益：'+sum_money+'</h3>');
                 
+                //最新的数据若与最近的数据收益一样，就不更新
+                if (chartData[chartData.length-1].value==parseFloat(sum_money))return false;
                 chartData.push({"year":new Date().Format("hh:mm:ss"),"value":parseFloat(sum_money)});
+                if (chartData.length>50)chartData.shift()
                 console.log(chartData);
                 linePlot.changeData(chartData);
 
