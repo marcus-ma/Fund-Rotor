@@ -5,6 +5,7 @@
     <title>Title</title>
 </head>
 <body>
+<div id="canvas"></div>
 <table>
     <tr><td valign="top">
             <form>
@@ -16,12 +17,45 @@
     </tr>
 </table>
 <script src="http://libs.baidu.com/jquery/2.0.0/jquery.min.js"></script>
+<script src="https://cdn.bootcdn.net/ajax/libs/g2plot/1.2.0-beta.0/g2plot.js"></script>
 <script>
-
+    
     //此处填写要实时爬取的基金代码和该基金的持有份额
     var config=[
         {"code":"519674","money":"10"},
     ]
+    
+    //用于格式化时间显示
+    Date.prototype.Format = function (fmt) { 
+        var o = {
+            "M+": this.getMonth() + 1, // 月份
+            "d+": this.getDate(), // 日
+            "h+": this.getHours(), // 小时
+            "m+": this.getMinutes(), // 分
+            "s+": this.getSeconds(), // 秒
+            "q+": Math.floor((this.getMonth() + 3) / 3), // 季度
+            "S": this.getMilliseconds() // 毫秒
+        };
+        if (/(y+)/.test(fmt))
+            fmt = fmt.replace(RegExp.$1, (this.getFullYear() + "").substr(4 - RegExp.$1.length));
+        for (var k in o)
+            if (new RegExp("(" + k + ")").test(fmt)) fmt = fmt.replace(RegExp.$1, (RegExp.$1.length == 1) ? (o[k]) : (("00" + o[k]).substr(("" + o[k]).length)));
+        return fmt;
+    };
+    
+    
+    //展示总收益趋势的折线图
+    const chartData = [{"year":new Date().Format("hh:mm:ss"),"value":0}];
+    const linePlot = new G2Plot.Line('canvas', {
+        padding: 'auto',
+        forceFit: true,
+        data:[],
+        xField: 'year',
+        yField: 'value',
+    });
+    linePlot.render();
+    
+    
     window.addEventListener("load", function(evt) {
         var ws;
         document.getElementById("open").onclick = function(evt) {
@@ -44,6 +78,10 @@
 
                 let sum_money = (eval(res.join("+"))).toFixed(2);
                 $('#output').append('<h3 style="color: red">总收益：'+sum_money+'</h3>');
+                
+                chartData.push({"year":new Date().Format("hh:mm:ss"),"value":parseFloat(sum_money)});
+                console.log(chartData);
+                linePlot.changeData(chartData);
 
             }
             return false;
