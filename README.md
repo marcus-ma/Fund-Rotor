@@ -1,5 +1,5 @@
 # Fund-Rotor
-A tool that use Websock's fund to crawl and calculate estimated returns for the day
+A tool that use Websock to crawl and calculate fund's estimated returns for the day
 
 ## Used way
 ### Add The Fund Info
