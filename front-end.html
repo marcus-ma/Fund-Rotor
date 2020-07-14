@@ -86,7 +86,7 @@
                 //最新的数据若与最近的数据收益一样，就不更新
                 //if (chartData[chartData.length-1].value==parseFloat(sum_money))return false;
                 chartData.push({"year":year,'type':'总收益',"value":parseFloat(sum_money)});
-                //if (chartData.length>50)chartData.shift()
+                if (chartData.length>50)chartData.splice(0,config.length+1)
                 console.log(chartData);
                 linePlot.changeData(chartData);
 
