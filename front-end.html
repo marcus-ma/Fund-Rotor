@@ -23,6 +23,7 @@
     //此处填写要实时爬取的基金代码和该基金的持有份额
     var config=[
         {"code":"519674","money":"10"},
+        {"code":"320007","money":"46"}
     ]
     
     //用于格式化时间显示
@@ -45,13 +46,15 @@
     
     
     //展示总收益趋势的折线图
-    const chartData = [{"year":new Date().Format("hh:mm:ss"),"value":0}];
+    //const chartData = [{"year":new Date().Format("hh:mm:ss"),"value":0}];
+    const chartData = [];
     const linePlot = new G2Plot.Line('canvas', {
         padding: 'auto',
         forceFit: true,
         data:[],
         xField: 'year',
         yField: 'value',
+        seriesField: 'type',
     });
     linePlot.render();
     
@@ -67,22 +70,23 @@
             ws.onmessage = function(evt) {
                 $('#output').empty();
                 let data = JSON.parse(evt.data),
+                    year = new Date().Format("hh:mm:ss"),
                     res = []
 
-                console.log(data);
-
+             
                 data.map(function (item) {
                     $('#output').append('<h3>'+JSON.stringify({"name":item.name,"range":item.range,"momney":item.money})+'</h3>');
-                    res.push(item.money)
+                    res.push(item.money);
+                    chartData.push({"year":year,'type':item.name,"value":parseFloat(item.money)});
                 })
 
                 let sum_money = (eval(res.join("+"))).toFixed(2);
                 $('#output').append('<h3 style="color: red">总收益：'+sum_money+'</h3>');
                 
                 //最新的数据若与最近的数据收益一样，就不更新
-                if (chartData[chartData.length-1].value==parseFloat(sum_money))return false;
-                chartData.push({"year":new Date().Format("hh:mm:ss"),"value":parseFloat(sum_money)});
-                if (chartData.length>50)chartData.shift()
+                //if (chartData[chartData.length-1].value==parseFloat(sum_money))return false;
+                chartData.push({"year":year,'type':'总收益',"value":parseFloat(sum_money)});
+                //if (chartData.length>50)chartData.shift()
                 console.log(chartData);
                 linePlot.changeData(chartData);
 
