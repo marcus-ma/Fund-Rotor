@@ -6,9 +6,10 @@ A tool that use Websock to crawl and calculate fund's estimated returns for the 
 需要在front-end.html中的js代码区域填写要获取的基金信息
 <br>
 ```js
-//此处填写要实时爬取的基金代码和该基金的持有份额
+//此处填写要实时爬取的基金代码和该基金的持有份额(可配置多个)
     var config=[
         {"code":"519674","money":"10"},
+        {"code":"320007","money":"46"},
     ]
 ```
 
