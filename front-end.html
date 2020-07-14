@@ -8,10 +8,7 @@
 <div id="canvas"></div>
 <table>
     <tr><td valign="top">
-
             <form>
-            	代码：<input type="text" id="code"> <br>
-            	份额：<input type="text" id="money"><br>
                 <button id="open">Open</button>
                 <button id="close">Close</button>
             </form>
@@ -23,6 +20,15 @@
 <script src="https://cdn.bootcdn.net/ajax/libs/g2plot/1.2.0-beta.0/g2plot.js"></script>
 <script>
 
+    //此处填写要实时爬取的基金代码和该基金的持有份额
+    var config=[
+        {"code":"519674","money":"10"},
+        {"code":"001766","money":"487.7"},
+        {"code":"161903","money":"590.85"},
+        {"code":"519181","money":"243.65"},
+        {"code":"162703","money":"426"},
+        {"code":"001052","money":"3329.33"},
+    ]
 
     //用于格式化时间显示
     Date.prototype.Format = function (fmt) {
@@ -44,18 +50,15 @@
 
 
     //展示总收益趋势的折线图
-    const chartData = [{"year":new Date().Format("hh:mm:ss"),"value":0}];
+    //const chartData = [{"year":new Date().Format("hh:mm:ss"),"value":0}];
+    const chartData = [];
     const linePlot = new G2Plot.Line('canvas', {
         padding: 'auto',
         forceFit: true,
         data:[],
         xField: 'year',
         yField: 'value',
-        legend: {
-    		position: 'right-top',
-  		},
-  		seriesField: 'type',
-  		responsive: true
+        seriesField: 'type',
     });
     linePlot.render();
 
@@ -65,30 +68,20 @@
         document.getElementById("open").onclick = function(evt) {
             if (ws) {return false;}
             ws = new WebSocket("ws://localhost:8888/ws");
-            var money = $("#money").val();
-            var code = $("#code").val();
-            console.log("code =" + code + " money= " + money);
-
-		    //此处填写要实时爬取的基金代码和该基金的持有份额
-		    var config=[
-		        {"code":code,"money":money},
-		        {"code":"001605","money":100}
-		    ];
-
             ws.onopen = function(evt) {ws.send(JSON.stringify({"data":config}));}
             ws.onclose = function(evt) {ws = null;}
             ws.onerror = function(evt) {}
             ws.onmessage = function(evt) {
                 $('#output').empty();
                 let data = JSON.parse(evt.data),
+                    year = new Date().Format("hh:mm:ss"),
                     res = []
 
-                console.log(data);
 
                 data.map(function (item) {
                     $('#output').append('<h3>'+JSON.stringify({"name":item.name,"range":item.range,"momney":item.money})+'</h3>');
-                    chartData.push({"year":new Date().Format("hh:mm:ss"),"value":parseFloat(item.money),"type":item.name});
-                    res.push(item.money)
+                    res.push(item.money);
+                    chartData.push({"year":year,'type':item.name,"value":parseFloat(item.money)});
                 })
 
                 let sum_money = (eval(res.join("+"))).toFixed(2);
@@ -96,10 +89,8 @@
 
                 //最新的数据若与最近的数据收益一样，就不更新
                 //if (chartData[chartData.length-1].value==parseFloat(sum_money))return false;
-
-                //if (chartData.length>50)chartData.shift()
-
-                chartData.push({"year":new Date().Format("hh:mm:ss"),"value":parseFloat(sum_money),"type":"总收益"});
+                chartData.push({"year":year,'type':'总收益',"value":parseFloat(sum_money)});
+                if (chartData.length>50)chartData.splice(0,config.length+1)
                 console.log(chartData);
                 linePlot.changeData(chartData);
 
