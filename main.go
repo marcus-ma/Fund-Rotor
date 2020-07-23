@@ -14,15 +14,13 @@ import (
 	"time"
 )
 
-
-
 func Get(url string) string {
-
-	// 超时时间：5秒
-	client := &http.Client{Timeout: 5 * time.Second}
+	// 超时时间：2秒
+	client := &http.Client{Timeout: 2 * time.Second}
 	resp, err := client.Get(url)
 	if err != nil {
-		panic(err)
+		time.Sleep(500 * time.Millisecond)
+		return Get(url)
 	}
 	defer resp.Body.Close()
 	var buffer [512]byte
@@ -56,9 +54,7 @@ type FundInfo struct {
 	//预计收益
 	Money float64 `json:"money"`
 
-
 }
-
 
 type Connection struct {
 	wsConn    *websocket.Conn
@@ -177,7 +173,9 @@ func wsHandler(w http.ResponseWriter, r *http.Request) {
 		data   []byte
 		conn   *Connection
 	)
+
 	t := time.Now()
+
 	//早上开市
 	lunchStart := time.Date(t.Year(), t.Month(), t.Day(), 9, 30, 0, 0, t.Location()).Unix()
 	//中午休市
@@ -186,6 +184,8 @@ func wsHandler(w http.ResponseWriter, r *http.Request) {
 	lunchOpen := time.Date(t.Year(), t.Month(), t.Day(), 13, 00, 0, 0, t.Location()).Unix()
 	//下午收市
 	lunchEnd := time.Date(t.Year(), t.Month(), t.Day(), 15, 00, 0, 0, t.Location()).Unix()
+
+
 
 	if wsConn, err = upgrade.Upgrade(w, r, nil); err != nil {
 		return
@@ -205,7 +205,7 @@ func wsHandler(w http.ResponseWriter, r *http.Request) {
 				err error
 			)
 			for {
-				
+
 				now:=time.Now().Unix()
 				if  (lunchStart < now && now < lunchClose) || (lunchOpen < now && now < lunchEnd) {
 					if err = conn.WriteMessage(fund(string(data))); err != nil {
@@ -214,6 +214,8 @@ func wsHandler(w http.ResponseWriter, r *http.Request) {
 				}
 
 				time.Sleep(10 * time.Second)
+
+
 			}
 
 		}()
@@ -223,12 +225,11 @@ ERR:
 	conn.Close()
 }
 
-
+//基金爬取
 func fund(rcData string) []byte{
 
 		var returnData []*FundInfo
 		var fundCount int
-		channel:= make(chan *FundInfo)
 
 		jsonString := rcData
 		codeMap := make(map[string][]map[string]string)
@@ -236,6 +237,10 @@ func fund(rcData string) []byte{
 
 		items := codeMap["data"]
 		fundCount = len(items)
+		channel:= make(chan *FundInfo,fundCount)
+
+		//记下爬取开始时间
+		start := time.Now()
 		for  _,item := range items{
 
 			go func(channel chan *FundInfo,item map[string]string) {
@@ -248,7 +253,6 @@ func fund(rcData string) []byte{
 				HadMoney,_:=strconv.ParseFloat(item["money"],64)
 				fund.Money = math.Round(((FundNow-FundBefore)*HadMoney)*100)/100
 				fund.Range = fund.FundRange
-
 
 				channel<-fund
 
@@ -263,12 +267,10 @@ func fund(rcData string) []byte{
 			if len(returnData) == fundCount {close(channel)}
 		}
 
-
-
+		//显示耗费时间
+		fmt.Println("time spent:",time.Since(start).Seconds())
 		fmt.Println("-------------------------------------------------------------------")
 		data,_ :=json.Marshal(returnData)
-
-
 		return data
 }
 
