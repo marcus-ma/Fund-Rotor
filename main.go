@@ -14,9 +14,18 @@ import (
 	"time"
 )
 
+var (
+	transport *http.Transport
+	upgrade = websocket.Upgrader{
+		CheckOrigin: func(r *http.Request) bool {
+			return true
+		},
+	}
+)
+
 func Get(url string) string {
-	// 超时时间：2秒
-	client := &http.Client{Timeout: 2 * time.Second}
+	// 超时时间：2秒, 连接池
+	client := &http.Client{Timeout: 2 * time.Second,Transport: transport}
 	resp, err := client.Get(url)
 	if err != nil {
 		time.Sleep(500 * time.Millisecond)
@@ -158,13 +167,6 @@ ERR:
 
 }
 
-var (
-	upgrade = websocket.Upgrader{
-		CheckOrigin: func(r *http.Request) bool {
-			return true
-		},
-	}
-)
 
 func wsHandler(w http.ResponseWriter, r *http.Request) {
 	var (
@@ -228,8 +230,11 @@ ERR:
 //基金爬取
 func fund(rcData string) []byte{
 
-		var returnData []*FundInfo
-		var fundCount int
+		var (
+		   returnData []*FundInfo
+		   fundCount int
+		   sumMoney float64
+		)
 
 		jsonString := rcData
 		codeMap := make(map[string][]map[string]string)
@@ -263,10 +268,13 @@ func fund(rcData string) []byte{
 
 		for value := range channel{
 			fmt.Println(value)
+			sumMoney+=value.Money
 			returnData = append(returnData,value)
 			if len(returnData) == fundCount {close(channel)}
 		}
 
+		//显示预估收益
+		fmt.Println("sum money:",math.Round(sumMoney*100)/100)
 		//显示耗费时间
 		fmt.Println("time spent:",time.Since(start).Seconds())
 		fmt.Println("-------------------------------------------------------------------")
@@ -280,6 +288,17 @@ func fund(rcData string) []byte{
 
 func main() {
 
+	transport = &http.Transport{
+		DialContext: (&net.Dialer{
+			Timeout:   2 * time.Second, //连接超时
+			KeepAlive: 2 * time.Second, //探活时间
+		}).DialContext,
+		MaxIdleConns:          100,              //最大空闲连接
+		IdleConnTimeout:       90 * time.Second, //空闲超时时间
+		TLSHandshakeTimeout:   10 * time.Second, //tls握手超时时间
+		ExpectContinueTimeout: 1 * time.Second,  //100-continue状态码超时时间
+	}
+	
 	http.HandleFunc("/ws", wsHandler)
 	fmt.Println("------------------------服务开启：端口在8888-------------------------------------------")
 	http.ListenAndServe("0.0.0.0:8888", nil)
