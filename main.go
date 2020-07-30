@@ -16,6 +16,7 @@ import (
 
 var (
 	transport *http.Transport
+	sm sync.Map
 	upgrade = websocket.Upgrader{
 		CheckOrigin: func(r *http.Request) bool {
 			return true
@@ -234,6 +235,8 @@ func fund(rcData string) []byte{
 		   returnData []*FundInfo
 		   fundCount int
 		   sumMoney float64
+		   isUpdate bool
+		   prevMoney interface{}
 		)
 
 		jsonString := rcData
@@ -272,13 +275,27 @@ func fund(rcData string) []byte{
 			returnData = append(returnData,value)
 			if len(returnData) == fundCount {close(channel)}
 		}
+	
+	
+		data,_ :=json.Marshal(returnData)
+	
+		prevMoney,isUpdate = sm.LoadOrStore("sumMoney",sumMoney)
+		if isUpdate {
+		       //跟前一次数据比对相同则不更新
+			if math.Round(prevMoney.(float64)*100)/100 == sumMoney {
+				data =[]byte(`{is_update:0}`)
+			}else{
+				sm.Store("sumMoney",sumMoney)
+			}
+
+		}
 
 		//显示预估收益
 		fmt.Println("sum money:",math.Round(sumMoney*100)/100)
 		//显示耗费时间
 		fmt.Println("time spent:",time.Since(start).Seconds())
 		fmt.Println("-------------------------------------------------------------------")
-		data,_ :=json.Marshal(returnData)
+		
 		return data
 }
 
