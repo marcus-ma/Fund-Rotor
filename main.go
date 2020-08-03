@@ -177,17 +177,20 @@ func wsHandler(w http.ResponseWriter, r *http.Request) {
 		conn   *Connection
 	)
 
-	t := time.Now()
+	
+	getUnixTime:= func(hour,min int) int64 {
+		t := time.Now()
+		return time.Date(t.Year(), t.Month(), t.Day(), hour, min, 0, 0, t.Location()).Unix()
+	}
 
 	//早上开市
-	lunchStart := time.Date(t.Year(), t.Month(), t.Day(), 9, 30, 0, 0, t.Location()).Unix()
+	lunchStart := getUnixTime(9,30)
 	//中午休市
-	lunchClose := time.Date(t.Year(), t.Month(), t.Day(), 11, 30, 0, 0, t.Location()).Unix()
+	lunchClose := getUnixTime(11,30)
 	//下午开市
-	lunchOpen := time.Date(t.Year(), t.Month(), t.Day(), 13, 00, 0, 0, t.Location()).Unix()
+	lunchOpen := getUnixTime(13,00)
 	//下午收市
-	lunchEnd := time.Date(t.Year(), t.Month(), t.Day(), 15, 00, 0, 0, t.Location()).Unix()
-
+	lunchEnd := getUnixTime(15,00)
 
 
 	if wsConn, err = upgrade.Upgrade(w, r, nil); err != nil {
