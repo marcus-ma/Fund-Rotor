@@ -286,7 +286,7 @@ func fund(rcData string) []byte{
 		if isUpdate {
 		       //跟前一次数据比对相同则不更新
 			if math.Round(prevMoney.(float64)*100)/100 == sumMoney {
-				data =[]byte(`{is_update:0}`)
+				data =[]byte(`{"is_update":0}`)
 			}else{
 				sm.Store("sumMoney",sumMoney)
 			}
